@@ -33,25 +33,7 @@
 #include <linux/compat.h>
 
 #include "internal.h"
-#ifdef CONFIG_KSU_SUSFS_SUS_PATH
-    struct filename* fname;
-    int status;
-    int error;
-#endif
 
-#ifdef CONFIG_KSU
-    ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
-#endif
-
-#ifdef CONFIG_KSU_SUSFS_SUS_PATH
-    fname = getname_safe(filename);
-    status = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);
-    putname_safe(fname);
-
-    if (status) {
-        return error;
-    }
-#endif
 
 int do_truncate2(struct vfsmount *mnt, struct dentry *dentry, loff_t length,
 		unsigned int time_attrs, struct file *filp)
@@ -401,7 +383,25 @@ long do_faccessat(int dfd, const char __user *filename, int mode)
 			override_cred->cap_effective =
 				override_cred->cap_permitted;
 	}
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+    struct filename* fname;
+    int status;
+    int error;
+#endif
 
+#ifdef CONFIG_KSU
+    ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+    fname = getname_safe(filename);
+    status = susfs_sus_path_by_filename(fname, &error, SYSCALL_FAMILY_ALL_ENOENT);
+    putname_safe(fname);
+
+    if (status) {
+        return error;
+    }
+#endif
 	/*
 	 * The new set of credentials can *only* be used in
 	 * task-synchronous circumstances, and does not need
